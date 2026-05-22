@@ -33,14 +33,9 @@
         "multi": false
       },
       {
-        "name": "imageMimeType",
-        "value": "image/jpg",
-        "component": "hidden"
-      },
-      {
         "component": "text",
         "name": "imageAlt",
-        "label": "Alternate Text"
+        "label": "Alt Text"
       }
     ]
   },
