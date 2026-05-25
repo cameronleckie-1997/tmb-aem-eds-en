@@ -10,6 +10,7 @@ import {
 } from "../../scripts/analytics/exports.js";
 
 let pageLoaded = false;
+
 window.addEventListener('load', () => {
   pageLoaded = true;
 });
@@ -43,32 +44,55 @@ const resolveComponentMeta = (el) => {
 };
 
 /**
- * ACCORDION + FAQ TOGGLE TRACKING (FIXED LOGIC)
+ * ACCORDION + FAQ TOGGLE TRACKING
+ * FIX:
+ * Prevent auto-trigger on page load when <details open>
  */
 document.addEventListener(
   'toggle',
   (e) => {
     if (!pageLoaded) return;
+
     const accordion = e.target;
 
     if (!accordion.matches('.accordion-item')) return;
+
+    /**
+     * Ignore first browser-triggered toggle
+     * caused by <details open>
+     */
+    if (!accordion.dataset.toggleInitialized) {
+      accordion.dataset.toggleInitialized = 'true';
+
+      if (accordion.hasAttribute('open')) {
+        return;
+      }
+    }
+
+    /**
+     * Track only OPEN action
+     */
     if (!accordion.open) return;
 
-    // ❌ IMPORTANT: avoid conflict with FAQ system (file 2)
+    /**
+     * Avoid conflict with FAQ media release system
+     */
     if (accordion.closest('.faq-accordion')) return;
 
     const isSingleExpansion = !!accordion.closest('.single-expansion');
 
     const persona = getPersona();
     const meta = resolveComponentMeta(accordion);
+
     const pageRegion = getPageRegion(accordion);
     const componentIndex = getComponentIndex(accordion);
 
     const summary = accordion.querySelector('.accordion-item-label');
+
     const ctaText = minifyText(summary?.textContent || '');
 
     /**
-     * CASE 1: single-expansion → FAQ interaction
+     * FAQ tracking
      */
     if (isSingleExpansion) {
       faqInteraction(
@@ -98,7 +122,7 @@ document.addEventListener(
     }
 
     /**
-     * CASE 2: normal accordion → expand tracking
+     * Standard accordion tracking
      */
     accrodianExpand(
       pageRegion,
@@ -118,11 +142,14 @@ document.addEventListener(
 );
 
 /**
- * 1. GENERIC ACCORDION CTA
+ * CLICK TRACKING
  */
 document.addEventListener('click', (e) => {
   const persona = getPersona();
 
+  /**
+   * 1. GENERIC ACCORDION CTA
+   */
   const accordionBtn = e.target.closest(
     '.accordion-container .button-container a'
   );
@@ -132,6 +159,7 @@ document.addEventListener('click', (e) => {
 
     const pageRegion = getPageRegion(accordionBtn);
     const componentIndex = getComponentIndex(accordionBtn);
+
     const nextPageURL = accordionBtn.getAttribute("href");
 
     const ctaText = minifyText(accordionBtn.textContent);
@@ -178,6 +206,7 @@ document.addEventListener('click', (e) => {
 
     const pageRegion = getPageRegion(faqLink);
     const componentIndex = getComponentIndex(faqLink);
+
     const nextPageURL = faqLink.getAttribute("href");
 
     const ctaText = minifyText(faqLink.textContent);
@@ -220,17 +249,30 @@ document.addEventListener('click', (e) => {
 
     const pageRegion = getPageRegion(applyLink);
     const componentIndex = getComponentIndex(applyLink);
+
     const nextPageURL = applyLink.getAttribute('href');
 
     const ctaText = minifyText(applyLink.textContent);
 
-    const cleanUrl = nextPageURL?.split('?')[0].split('#')[0].toLowerCase();
+    const cleanUrl = nextPageURL
+      ?.split('?')[0]
+      .split('#')[0]
+      .toLowerCase();
 
     const fileExt = cleanUrl?.split('.').pop();
 
     const fileExtensions = [
-      'pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv',
-      'ppt', 'pptx', 'zip', 'rar', 'txt'
+      'pdf',
+      'doc',
+      'docx',
+      'xls',
+      'xlsx',
+      'csv',
+      'ppt',
+      'pptx',
+      'zip',
+      'rar',
+      'txt'
     ];
 
     const isDownload = fileExtensions.includes(fileExt);
@@ -294,17 +336,30 @@ document.addEventListener('click', (e) => {
 
   const pageRegion = getPageRegion(mediaReleaseLink);
   const componentIndex = getComponentIndex(mediaReleaseLink);
+
   const nextPageURL = mediaReleaseLink.getAttribute('href');
 
   const ctaText = minifyText(mediaReleaseLink.textContent);
 
-  const cleanUrl = nextPageURL?.split('?')[0].split('#')[0].toLowerCase();
+  const cleanUrl = nextPageURL
+    ?.split('?')[0]
+    .split('#')[0]
+    .toLowerCase();
 
   const fileExt = cleanUrl?.split('.').pop();
 
   const fileExtensions = [
-    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv',
-    'ppt', 'pptx', 'zip', 'rar', 'txt'
+    'pdf',
+    'doc',
+    'docx',
+    'xls',
+    'xlsx',
+    'csv',
+    'ppt',
+    'pptx',
+    'zip',
+    'rar',
+    'txt'
   ];
 
   const isDownload = fileExtensions.includes(fileExt);
