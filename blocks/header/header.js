@@ -36,7 +36,8 @@ async function fetchQueryJson() {
     const basePath = getMetadata('base-path');
     const queryRes = await fetch('/query-index.json');
     const jsonRes = await queryRes.json();
-    window.searchData = jsonRes?.data?.filter((result) => result?.path?.startsWith(basePath) && !result?.robots?.includes('noindex') && !result?.robots?.includes('nofollow'));
+    const searchExclusionMeta = getMetadata('search-exclusion-urls')?.split(';');
+    window.searchData = jsonRes?.data?.filter((result) => result?.path?.startsWith(basePath) && !result?.robots?.includes('noindex') && !result?.robots?.includes('nofollow') && !searchExclusionMeta.includes(result?.path));
   } catch (error) {
     console.log('Failed to fetch query-index: ', error);
   }
