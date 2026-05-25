@@ -9,12 +9,6 @@ import {
   faqInteraction
 } from "../../scripts/analytics/exports.js";
 
-let pageLoaded = false;
-
-window.addEventListener('load', () => {
-  pageLoaded = true;
-});
-
 const resolveComponentMeta = (el) => {
   const section = el.closest('.section');
 
@@ -44,58 +38,62 @@ const resolveComponentMeta = (el) => {
 };
 
 /**
- * ACCORDION + FAQ TOGGLE TRACKING
- * FIX:
- * Prevent auto-trigger on page load when <details open>
+ * ACCORDION + FAQ TRACKING (FIXED)
+ * - No toggle event (avoids page-load issues)
+ * - Uses click on summary (reliable)
  */
-document.addEventListener(
-  'toggle',
-  (e) => {
-    if (!pageLoaded) return;
+document.addEventListener('click', (e) => {
+  const summary = e.target.closest('.accordion-item-label');
 
-    const accordion = e.target;
+  if (summary) {
+    const accordion = summary.closest('.accordion-item');
 
-    if (!accordion.matches('.accordion-item')) return;
+    if (!accordion) return;
 
-    /**
-     * Ignore first browser-triggered toggle
-     * caused by <details open>
-     */
-    if (!accordion.dataset.toggleInitialized) {
-      accordion.dataset.toggleInitialized = 'true';
+    requestAnimationFrame(() => {
+      // track only OPEN state
+      if (!accordion.open) return;
 
-      if (accordion.hasAttribute('open')) {
+      // avoid FAQ conflict
+      if (accordion.closest('.faq-accordion')) return;
+
+      const isSingleExpansion = !!accordion.closest('.single-expansion');
+
+      const persona = getPersona();
+      const meta = resolveComponentMeta(accordion);
+
+      const pageRegion = getPageRegion(accordion);
+      const componentIndex = getComponentIndex(accordion);
+
+      const ctaText = minifyText(summary.textContent || '');
+
+      if (isSingleExpansion) {
+        faqInteraction(
+          pageRegion,
+          ctaText,
+          meta.ctaTitle,
+          meta.componentName,
+          meta.componentType,
+          componentIndex,
+          persona,
+          'faq-toggle',
+          'faq-expand',
+          'FAQ_CARD_LIMITS',
+          'open',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          meta.componentId
+        );
         return;
       }
-    }
 
-    /**
-     * Track only OPEN action
-     */
-    if (!accordion.open) return;
-
-    /**
-     * Avoid conflict with FAQ media release system
-     */
-    if (accordion.closest('.faq-accordion')) return;
-
-    const isSingleExpansion = !!accordion.closest('.single-expansion');
-
-    const persona = getPersona();
-    const meta = resolveComponentMeta(accordion);
-
-    const pageRegion = getPageRegion(accordion);
-    const componentIndex = getComponentIndex(accordion);
-
-    const summary = accordion.querySelector('.accordion-item-label');
-
-    const ctaText = minifyText(summary?.textContent || '');
-
-    /**
-     * FAQ tracking
-     */
-    if (isSingleExpansion) {
-      faqInteraction(
+      accrodianExpand(
         pageRegion,
         ctaText,
         meta.ctaTitle,
@@ -103,53 +101,21 @@ document.addEventListener(
         meta.componentType,
         componentIndex,
         persona,
-        'faq-toggle',
-        'faq-expand',
-        'FAQ_CARD_LIMITS',
-        'open',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
+        'expand',
+        'accordion',
+        'in-content',
         meta.componentId
       );
+    });
 
-      return;
-    }
-
-    /**
-     * Standard accordion tracking
-     */
-    accrodianExpand(
-      pageRegion,
-      ctaText,
-      meta.ctaTitle,
-      meta.componentName,
-      meta.componentType,
-      componentIndex,
-      persona,
-      'expand',
-      'accordion',
-      'in-content',
-      meta.componentId
-    );
-  },
-  true
-);
-
-/**
- * CLICK TRACKING
- */
-document.addEventListener('click', (e) => {
-  const persona = getPersona();
+    return;
+  }
 
   /**
    * 1. GENERIC ACCORDION CTA
    */
+  const persona = getPersona();
+
   const accordionBtn = e.target.closest(
     '.accordion-container .button-container a'
   );
@@ -262,17 +228,8 @@ document.addEventListener('click', (e) => {
     const fileExt = cleanUrl?.split('.').pop();
 
     const fileExtensions = [
-      'pdf',
-      'doc',
-      'docx',
-      'xls',
-      'xlsx',
-      'csv',
-      'ppt',
-      'pptx',
-      'zip',
-      'rar',
-      'txt'
+      'pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv',
+      'ppt', 'pptx', 'zip', 'rar', 'txt'
     ];
 
     const isDownload = fileExtensions.includes(fileExt);
@@ -293,7 +250,6 @@ document.addEventListener('click', (e) => {
         fileExt,
         'download'
       );
-
       return;
     }
 
@@ -349,17 +305,8 @@ document.addEventListener('click', (e) => {
   const fileExt = cleanUrl?.split('.').pop();
 
   const fileExtensions = [
-    'pdf',
-    'doc',
-    'docx',
-    'xls',
-    'xlsx',
-    'csv',
-    'ppt',
-    'pptx',
-    'zip',
-    'rar',
-    'txt'
+    'pdf', 'doc', 'docx', 'xls', 'xlsx',
+    'csv', 'ppt', 'pptx', 'zip', 'rar', 'txt'
   ];
 
   const isDownload = fileExtensions.includes(fileExt);
@@ -380,7 +327,6 @@ document.addEventListener('click', (e) => {
       fileExt,
       'download'
     );
-
     return;
   }
 
