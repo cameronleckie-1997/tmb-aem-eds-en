@@ -9,11 +9,6 @@ import {
   faqInteraction
 } from "../../scripts/analytics/exports.js";
 
-let pageLoaded = false;
-window.addEventListener('load', () => {
-  pageLoaded = true;
-});
-
 const resolveComponentMeta = (el) => {
   const section = el.closest('.section');
 
@@ -43,35 +38,62 @@ const resolveComponentMeta = (el) => {
 };
 
 /**
- * ACCORDION + FAQ TOGGLE TRACKING (FIXED LOGIC)
+ * ACCORDION + FAQ TRACKING (FIXED)
+ * - No toggle event (avoids page-load issues)
+ * - Uses click on summary (reliable)
  */
-document.addEventListener(
-  'toggle',
-  (e) => {
-    if (!pageLoaded) return;
-    const accordion = e.target;
+document.addEventListener('click', (e) => {
+  const summary = e.target.closest('.accordion-item-label');
 
-    if (!accordion.matches('.accordion-item')) return;
-    if (!accordion.open) return;
+  if (summary) {
+    const accordion = summary.closest('.accordion-item');
 
-    // ❌ IMPORTANT: avoid conflict with FAQ system (file 2)
-    if (accordion.closest('.faq-accordion')) return;
+    if (!accordion) return;
 
-    const isSingleExpansion = !!accordion.closest('.single-expansion');
+    requestAnimationFrame(() => {
+      // track only OPEN state
+      if (!accordion.open) return;
 
-    const persona = getPersona();
-    const meta = resolveComponentMeta(accordion);
-    const pageRegion = getPageRegion(accordion);
-    const componentIndex = getComponentIndex(accordion);
+      // avoid FAQ conflict
+      if (accordion.closest('.faq-accordion')) return;
 
-    const summary = accordion.querySelector('.accordion-item-label');
-    const ctaText = minifyText(summary?.textContent || '');
+      const isSingleExpansion = !!accordion.closest('.single-expansion');
 
-    /**
-     * CASE 1: single-expansion → FAQ interaction
-     */
-    if (isSingleExpansion) {
-      faqInteraction(
+      const persona = getPersona();
+      const meta = resolveComponentMeta(accordion);
+
+      const pageRegion = getPageRegion(accordion);
+      const componentIndex = getComponentIndex(accordion);
+
+      const ctaText = minifyText(summary.textContent || '');
+
+      if (isSingleExpansion) {
+        faqInteraction(
+          pageRegion,
+          ctaText,
+          meta.ctaTitle,
+          meta.componentName,
+          meta.componentType,
+          componentIndex,
+          persona,
+          'faq-toggle',
+          'faq-expand',
+          'FAQ_CARD_LIMITS',
+          'open',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          meta.componentId
+        );
+        return;
+      }
+
+      accrodianExpand(
         pageRegion,
         ctaText,
         meta.ctaTitle,
@@ -79,48 +101,19 @@ document.addEventListener(
         meta.componentType,
         componentIndex,
         persona,
-        'faq-toggle',
-        'faq-expand',
-        'FAQ_CARD_LIMITS',
-        'open',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
+        'expand',
+        'accordion',
+        'in-content',
         meta.componentId
       );
+    });
 
-      return;
-    }
+    return;
+  }
 
-    /**
-     * CASE 2: normal accordion → expand tracking
-     */
-    accrodianExpand(
-      pageRegion,
-      ctaText,
-      meta.ctaTitle,
-      meta.componentName,
-      meta.componentType,
-      componentIndex,
-      persona,
-      'expand',
-      'accordion',
-      'in-content',
-      meta.componentId
-    );
-  },
-  true
-);
-
-/**
- * 1. GENERIC ACCORDION CTA
- */
-document.addEventListener('click', (e) => {
+  /**
+   * 1. GENERIC ACCORDION CTA
+   */
   const persona = getPersona();
 
   const accordionBtn = e.target.closest(
@@ -132,6 +125,7 @@ document.addEventListener('click', (e) => {
 
     const pageRegion = getPageRegion(accordionBtn);
     const componentIndex = getComponentIndex(accordionBtn);
+
     const nextPageURL = accordionBtn.getAttribute("href");
 
     const ctaText = minifyText(accordionBtn.textContent);
@@ -178,6 +172,7 @@ document.addEventListener('click', (e) => {
 
     const pageRegion = getPageRegion(faqLink);
     const componentIndex = getComponentIndex(faqLink);
+
     const nextPageURL = faqLink.getAttribute("href");
 
     const ctaText = minifyText(faqLink.textContent);
@@ -220,11 +215,15 @@ document.addEventListener('click', (e) => {
 
     const pageRegion = getPageRegion(applyLink);
     const componentIndex = getComponentIndex(applyLink);
+
     const nextPageURL = applyLink.getAttribute('href');
 
     const ctaText = minifyText(applyLink.textContent);
 
-    const cleanUrl = nextPageURL?.split('?')[0].split('#')[0].toLowerCase();
+    const cleanUrl = nextPageURL
+      ?.split('?')[0]
+      .split('#')[0]
+      .toLowerCase();
 
     const fileExt = cleanUrl?.split('.').pop();
 
@@ -251,7 +250,6 @@ document.addEventListener('click', (e) => {
         fileExt,
         'download'
       );
-
       return;
     }
 
@@ -294,17 +292,21 @@ document.addEventListener('click', (e) => {
 
   const pageRegion = getPageRegion(mediaReleaseLink);
   const componentIndex = getComponentIndex(mediaReleaseLink);
+
   const nextPageURL = mediaReleaseLink.getAttribute('href');
 
   const ctaText = minifyText(mediaReleaseLink.textContent);
 
-  const cleanUrl = nextPageURL?.split('?')[0].split('#')[0].toLowerCase();
+  const cleanUrl = nextPageURL
+    ?.split('?')[0]
+    .split('#')[0]
+    .toLowerCase();
 
   const fileExt = cleanUrl?.split('.').pop();
 
   const fileExtensions = [
-    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv',
-    'ppt', 'pptx', 'zip', 'rar', 'txt'
+    'pdf', 'doc', 'docx', 'xls', 'xlsx',
+    'csv', 'ppt', 'pptx', 'zip', 'rar', 'txt'
   ];
 
   const isDownload = fileExtensions.includes(fileExt);
@@ -325,7 +327,6 @@ document.addEventListener('click', (e) => {
       fileExt,
       'download'
     );
-
     return;
   }
 
